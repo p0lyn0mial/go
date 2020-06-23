@@ -2591,6 +2591,24 @@ type Server struct {
 	onShutdown []func()
 }
 
+func (s *Server) DefaultConnState(nc net.Conn, cs ConnState) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for c, _ := range s.activeConn {
+		if c.rwc.RemoteAddr().String() == nc.RemoteAddr().String() && c.rwc.LocalAddr().String() == nc.LocalAddr().String() {
+			c.setStateNew(nc, cs)
+		}
+	}
+}
+
+func (c *conn) setStateNew(nc net.Conn, state ConnState) {
+	if state > 0xff || state < 0 {
+		panic("internal error")
+	}
+	packedState := uint64(time.Now().Unix()<<8) | uint64(state)
+	atomic.StoreUint64(&c.curState.atomic, packedState)
+}
+
 func (s *Server) getDoneChan() <-chan struct{} {
 	s.mu.Lock()
 	defer s.mu.Unlock()

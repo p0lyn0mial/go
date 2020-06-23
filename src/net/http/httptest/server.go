@@ -179,6 +179,7 @@ func (s *Server) StartTLS() {
 	}
 	s.Listener = tls.NewListener(s.Listener, s.TLS)
 	s.URL = "https://" + s.Listener.Addr().String()
+	s.Config.ConnState = s.Config.DefaultConnState
 	s.wrap()
 	s.goServe()
 }
